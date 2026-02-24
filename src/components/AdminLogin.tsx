@@ -3,7 +3,7 @@ import { useApp } from '@/contexts/AppContext';
 import { ADMIN_EMAILS, maskEmail } from '@/lib/database';
 import { supabase } from '@/integrations/supabase/client';
 import ParticleCanvas from './ParticleCanvas';
-import { ArrowLeft, Shield, Mail, Loader2 } from 'lucide-react';
+import { ArrowLeft, Shield, Mail, Loader2, Copy, Check } from 'lucide-react';
 
 const AdminLogin = () => {
   const { setScreen, setSession, showToast, setSection } = useApp();
@@ -17,6 +17,8 @@ const AdminLogin = () => {
   const [shaking, setShaking] = useState(false);
   const [verified, setVerified] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [generatedOtp, setGeneratedOtp] = useState('');
+  const [copied, setCopied] = useState(false);
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
@@ -55,17 +57,25 @@ const AdminLogin = () => {
       if (data?.error) throw new Error(data.error);
 
       setAdminInfo(data.adminInfo || info);
+      setGeneratedOtp(data.otpCode || '');
       setTimer(300);
-      showToast(`OTP sent to ${maskEmail(email)}`, 'success');
+      showToast('OTP generated successfully!', 'success');
       setStep(2);
       setTimeout(() => otpRefs.current[0]?.focus(), 100);
     } catch (err: any) {
-      showToast(err.message || 'Failed to send OTP', 'error');
+      showToast(err.message || 'Failed to generate OTP', 'error');
       setShaking(true);
       setTimeout(() => setShaking(false), 500);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCopyOtp = () => {
+    navigator.clipboard.writeText(generatedOtp);
+    setCopied(true);
+    showToast('OTP copied!', 'success');
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const handleOTPChange = useCallback((index: number, value: string) => {
@@ -160,9 +170,10 @@ const AdminLogin = () => {
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
 
+      setGeneratedOtp(data.otpCode || '');
       setTimer(300);
       setOtp(['', '', '', '', '', '']);
-      showToast('New OTP sent!', 'success');
+      showToast('New OTP generated!', 'success');
       otpRefs.current[0]?.focus();
     } catch (err: any) {
       showToast(err.message || 'Failed to resend OTP', 'error');
@@ -219,8 +230,21 @@ const AdminLogin = () => {
           ) : (
             <div>
               <p className="text-center text-muted-foreground text-sm mb-4">
-                OTP sent to <span className="text-primary">{maskEmail(email)}</span>
+                OTP generated for <span className="text-primary">{maskEmail(email)}</span>
               </p>
+
+              {/* Show generated OTP */}
+              {generatedOtp && (
+                <div className="mb-4 p-3 rounded-lg bg-secondary/10 border border-secondary/30 text-center">
+                  <p className="text-xs text-muted-foreground mb-1">Your Verification Code</p>
+                  <div className="flex items-center justify-center gap-2">
+                    <span className="font-mono text-2xl font-bold text-secondary tracking-[6px]">{generatedOtp}</span>
+                    <button onClick={handleCopyOtp} className="text-muted-foreground hover:text-secondary transition p-1">
+                      {copied ? <Check size={16} /> : <Copy size={16} />}
+                    </button>
+                  </div>
+                </div>
+              )}
 
               <div className={`flex justify-center gap-2 mb-4 ${shaking ? 'shake' : ''}`} onPaste={handleOTPPaste}>
                 {otp.map((digit, i) => (
