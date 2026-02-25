@@ -18,6 +18,7 @@ const AdminLogin = () => {
   const [verified, setVerified] = useState(false);
   const [loading, setLoading] = useState(false);
   const [generatedOtp, setGeneratedOtp] = useState('');
+  const [emailSent, setEmailSent] = useState(false);
   const [copied, setCopied] = useState(false);
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -57,9 +58,10 @@ const AdminLogin = () => {
       if (data?.error) throw new Error(data.error);
 
       setAdminInfo(data.adminInfo || info);
+      setEmailSent(!!data.emailSent);
       setGeneratedOtp(data.otpCode || '');
       setTimer(300);
-      showToast('OTP generated successfully!', 'success');
+      showToast(data.emailSent ? `OTP sent to ${maskEmail(email)}` : 'OTP generated successfully!', 'success');
       setStep(2);
       setTimeout(() => otpRefs.current[0]?.focus(), 100);
     } catch (err: any) {
@@ -171,6 +173,7 @@ const AdminLogin = () => {
       if (data?.error) throw new Error(data.error);
 
       setGeneratedOtp(data.otpCode || '');
+      setEmailSent(!!data.emailSent);
       setTimer(300);
       setOtp(['', '', '', '', '', '']);
       showToast('New OTP generated!', 'success');
@@ -230,11 +233,14 @@ const AdminLogin = () => {
           ) : (
             <div>
               <p className="text-center text-muted-foreground text-sm mb-4">
-                OTP generated for <span className="text-primary">{maskEmail(email)}</span>
+                {emailSent 
+                  ? <>OTP sent to <span className="text-primary">{maskEmail(email)}</span>. Check your inbox!</>
+                  : <>OTP generated for <span className="text-primary">{maskEmail(email)}</span></>
+                }
               </p>
 
-              {/* Show generated OTP */}
-              {generatedOtp && (
+              {/* Show generated OTP only if email was NOT sent (fallback) */}
+              {!emailSent && generatedOtp && (
                 <div className="mb-4 p-3 rounded-lg bg-secondary/10 border border-secondary/30 text-center">
                   <p className="text-xs text-muted-foreground mb-1">Your Verification Code</p>
                   <div className="flex items-center justify-center gap-2">
