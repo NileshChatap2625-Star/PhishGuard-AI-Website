@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { Resend } from "npm:resend@4.0.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -52,11 +53,56 @@ Deno.serve(async (req) => {
         expires_at: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
       });
 
-      console.log(`OTP generated for ${normalizedEmail}`);
+      // Send OTP email via Resend
+      let emailSent = false;
+      const resendKey = Deno.env.get("RESEND_API_KEY");
+      if (resendKey) {
+        try {
+          const resend = new Resend(resendKey);
+          const { error: emailError } = await resend.emails.send({
+            from: "PhishGuard Admin <onboarding@resend.dev>",
+            to: [normalizedEmail],
+            subject: "Your Admin Login OTP - PhishGuard",
+            html: `
+              <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 480px; margin: 0 auto; padding: 40px 20px; background: #ffffff;">
+                <div style="text-align: center; margin-bottom: 30px;">
+                  <h1 style="color: #7c3aed; font-size: 24px; margin: 0;">🛡️ PhishGuard</h1>
+                  <p style="color: #6b7280; font-size: 14px; margin-top: 8px;">Admin Access Portal</p>
+                </div>
+                <div style="background: #f3f4f6; border-radius: 12px; padding: 30px; text-align: center;">
+                  <p style="color: #374151; font-size: 16px; margin: 0 0 8px;">Hello, <strong>${adminInfo.name}</strong></p>
+                  <p style="color: #6b7280; font-size: 14px; margin: 0 0 24px;">Your one-time password for admin login:</p>
+                  <div style="background: #7c3aed; color: white; font-size: 32px; letter-spacing: 8px; padding: 16px 24px; border-radius: 8px; display: inline-block; font-weight: bold;">
+                    ${otpCode}
+                  </div>
+                  <p style="color: #9ca3af; font-size: 12px; margin-top: 24px;">This code expires in 5 minutes. Do not share it with anyone.</p>
+                </div>
+                <p style="color: #9ca3af; font-size: 11px; text-align: center; margin-top: 20px;">
+                  If you didn't request this code, please ignore this email.
+                </p>
+              </div>
+            `,
+          });
 
-      // Return OTP directly to client for verification display
+          if (emailError) {
+            console.error("Email send error:", emailError);
+          } else {
+            emailSent = true;
+            console.log(`OTP email sent to ${normalizedEmail}`);
+          }
+        } catch (emailErr) {
+          console.error("Resend error:", emailErr);
+        }
+      }
+
       return new Response(
-        JSON.stringify({ success: true, adminInfo, otpCode }),
+        JSON.stringify({ 
+          success: true, 
+          adminInfo, 
+          emailSent,
+          // Only include OTP in response if email failed (fallback)
+          ...(emailSent ? {} : { otpCode })
+        }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -66,7 +112,7 @@ Deno.serve(async (req) => {
       if (!adminInfo) {
         return new Response(
           JSON.stringify({ error: "Unauthorized email" }),
-          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
@@ -125,7 +171,7 @@ Deno.serve(async (req) => {
 
     return new Response(
       JSON.stringify({ error: "Invalid action" }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
     console.error("Error:", err);
