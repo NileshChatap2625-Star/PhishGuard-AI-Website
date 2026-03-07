@@ -81,7 +81,13 @@ const Index = () => {
     );
   }
 
-  return null;
+  return (
+    <>
+      {/* Floating chat widget on role-selection page */}
+      {screen === 'role-selection' && <ChatBubbleWidget />}
+      {null}
+    </>
+  );
 };
 
 export default Index;
