@@ -50,44 +50,44 @@ const Index = () => {
     );
   }
 
-  if (screen === 'role-selection') return <RoleSelection />;
-  if (screen === 'admin-login') return <AdminLogin />;
-  if (screen === 'user-login') return <UserLogin />;
-  if (screen === 'user-register') return <UserRegister />;
+  if (screen === 'role-selection') return <><RoleSelection /><ChatBubbleWidget /></>;
+  if (screen === 'admin-login') return <><AdminLogin /><ChatBubbleWidget /></>;
+  if (screen === 'user-login') return <><UserLogin /><ChatBubbleWidget /></>;
+  if (screen === 'user-register') return <><UserRegister /><ChatBubbleWidget /></>;
 
   if (screen === 'user-dashboard') {
     const titles: Record<string, string> = { dashboard: 'Dashboard', scanner: 'URL Scanner', history: 'Scan History', support: 'AI Support', profile: 'Profile' };
     return (
-      <DashboardLayout menuItems={USER_MENU} title={titles[section] || 'Dashboard'} role="user">
-        {section === 'dashboard' && <UserDashboardHome />}
-        {section === 'scanner' && <URLScanner />}
-        {section === 'history' && <ScanHistory />}
-        {section === 'support' && <ChatSupport />}
-        {section === 'profile' && <UserProfile />}
-      </DashboardLayout>
+      <>
+        <DashboardLayout menuItems={USER_MENU} title={titles[section] || 'Dashboard'} role="user">
+          {section === 'dashboard' && <UserDashboardHome />}
+          {section === 'scanner' && <URLScanner />}
+          {section === 'history' && <ScanHistory />}
+          {section === 'support' && <ChatSupport />}
+          {section === 'profile' && <UserProfile />}
+        </DashboardLayout>
+        {section !== 'support' && <ChatBubbleWidget />}
+      </>
     );
   }
 
   if (screen === 'admin-dashboard') {
     const titles: Record<string, string> = { dashboard: 'Dashboard', alerts: 'Alerts Center', users: 'User Management', analytics: 'All Scan History', settings: 'System Settings' };
     return (
-      <DashboardLayout menuItems={ADMIN_MENU} title={titles[section] || 'Dashboard'} role="admin">
-        {section === 'dashboard' && <AdminDashboardHome />}
-        {section === 'alerts' && <AdminAlerts />}
-        {section === 'users' && <AdminUsers />}
-        {section === 'analytics' && <AdminScanHistory />}
-        {section === 'settings' && <AdminSettings />}
-      </DashboardLayout>
+      <>
+        <DashboardLayout menuItems={ADMIN_MENU} title={titles[section] || 'Dashboard'} role="admin">
+          {section === 'dashboard' && <AdminDashboardHome />}
+          {section === 'alerts' && <AdminAlerts />}
+          {section === 'users' && <AdminUsers />}
+          {section === 'analytics' && <AdminScanHistory />}
+          {section === 'settings' && <AdminSettings />}
+        </DashboardLayout>
+        <ChatBubbleWidget />
+      </>
     );
   }
 
-  return (
-    <>
-      {/* Floating chat widget on role-selection page */}
-      {screen === 'role-selection' && <ChatBubbleWidget />}
-      {null}
-    </>
-  );
+  return null;
 };
 
 export default Index;
