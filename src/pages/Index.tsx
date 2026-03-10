@@ -73,7 +73,7 @@ const Index = () => {
   }
 
   if (screen === 'admin-dashboard') {
-    const titles: Record<string, string> = { dashboard: 'Dashboard', alerts: 'Alerts Center', users: 'User Management', analytics: 'All Scan History', settings: 'System Settings' };
+    const titles: Record<string, string> = { dashboard: 'Dashboard', alerts: 'Alerts Center', users: 'User Management', analytics: 'All Scan History', settings: 'System Settings', support: 'AI Support' };
     return (
       <>
         <DashboardLayout menuItems={ADMIN_MENU} title={titles[section] || 'Dashboard'} role="admin">
@@ -82,8 +82,9 @@ const Index = () => {
           {section === 'users' && <AdminUsers />}
           {section === 'analytics' && <AdminScanHistory />}
           {section === 'settings' && <AdminSettings />}
+          {section === 'support' && <ChatSupport />}
         </DashboardLayout>
-        <ChatBubbleWidget />
+        {section !== 'support' && <ChatBubbleWidget />}
       </>
     );
   }
