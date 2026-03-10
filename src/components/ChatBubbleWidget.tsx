@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { MessageCircle, X, Send, Bot, User, Loader2 } from 'lucide-react';
 import { streamChat, type Msg } from '@/lib/chatStream';
+import ReactMarkdown from 'react-markdown';
 
 const QUICK_QUESTIONS = [
   "How does URL scanning work?",
