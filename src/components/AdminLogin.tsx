@@ -176,9 +176,16 @@ const AdminLogin = () => {
       }
 
       if (data?.error) {
+        const newFails = otpFailCount + 1;
+        setOtpFailCount(newFails);
         setShaking(true);
         setTimeout(() => setShaking(false), 500);
-        showToast(data.error, 'error');
+        if (newFails >= 5) {
+          setShowPasswordFallback(true);
+          showToast('Too many failed attempts. Use password to login.', 'warning');
+        } else {
+          showToast(`${data.error} (${5 - newFails} attempts left)`, 'error');
+        }
         setOtp(['', '', '', '', '', '']);
         otpRefs.current[0]?.focus();
         return;
