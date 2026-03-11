@@ -3,6 +3,7 @@ import RoleSelection from '@/components/RoleSelection';
 import AdminLogin from '@/components/AdminLogin';
 import UserLogin from '@/components/UserLogin';
 import UserRegister from '@/components/UserRegister';
+import UserResetPassword from '@/components/UserResetPassword';
 import DashboardLayout from '@/components/DashboardLayout';
 import UserDashboardHome from '@/components/UserDashboardHome';
 import URLScanner from '@/components/URLScanner';
@@ -55,6 +56,7 @@ const Index = () => {
   if (screen === 'admin-login') return <><AdminLogin /><ChatBubbleWidget /></>;
   if (screen === 'user-login') return <><UserLogin /><ChatBubbleWidget /></>;
   if (screen === 'user-register') return <><UserRegister /><ChatBubbleWidget /></>;
+  if (screen === 'user-reset-password') return <><UserResetPassword /><ChatBubbleWidget /></>;
 
   if (screen === 'user-dashboard') {
     const titles: Record<string, string> = { dashboard: 'Dashboard', scanner: 'URL Scanner', history: 'Scan History', support: 'AI Support', profile: 'Profile' };
