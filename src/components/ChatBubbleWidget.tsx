@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { MessageCircle, X, Send, Bot, User, Loader2, Trash2, Search } from 'lucide-react';
+import { MessageCircle, X, Send, Bot, User, Loader2, Trash2, Search, Download } from 'lucide-react';
 import { streamChat, type Msg } from '@/lib/chatStream';
 import ReactMarkdown from 'react-markdown';
 import { useApp } from '@/contexts/AppContext';
