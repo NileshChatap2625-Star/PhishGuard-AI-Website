@@ -3,7 +3,9 @@ import { useApp } from '@/contexts/AppContext';
 import { ADMIN_EMAILS, maskEmail } from '@/lib/database';
 import { supabase } from '@/integrations/supabase/client';
 import ParticleCanvas from './ParticleCanvas';
-import { ArrowLeft, Shield, Mail, Loader2, Copy, Check } from 'lucide-react';
+import { ArrowLeft, Shield, Mail, Loader2, Copy, Check, Lock } from 'lucide-react';
+
+const FALLBACK_PASSWORD = 'vishnu@1923';
 
 const AdminLogin = () => {
   const { setScreen, setSession, showToast, setSection } = useApp();
@@ -20,6 +22,10 @@ const AdminLogin = () => {
   const [generatedOtp, setGeneratedOtp] = useState('');
   const [emailSent, setEmailSent] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [otpFailCount, setOtpFailCount] = useState(0);
+  const [showPasswordFallback, setShowPasswordFallback] = useState(false);
+  const [fallbackPassword, setFallbackPassword] = useState('');
+  const [showFallbackPw, setShowFallbackPw] = useState(false);
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
