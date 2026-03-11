@@ -140,6 +140,9 @@ const ChatBubbleWidget: React.FC<ChatBubbleWidgetProps> = ({ embedded = false })
           </div>
         </div>
         <div className="flex items-center gap-1">
+          <button onClick={() => { setSearchOpen(!searchOpen); setSearchQuery(''); setTimeout(() => searchInputRef.current?.focus(), 100); }} className="hover:bg-white/20 rounded-full p-1 transition-colors" title="Search chat">
+            <Search className="w-4 h-4" />
+          </button>
           {messages.length > 1 && (
             <button onClick={clearHistory} className="hover:bg-white/20 rounded-full p-1 transition-colors" title="Clear chat">
               <Trash2 className="w-4 h-4" />
@@ -152,6 +155,28 @@ const ChatBubbleWidget: React.FC<ChatBubbleWidgetProps> = ({ embedded = false })
           )}
         </div>
       </div>
+
+      {/* Search bar */}
+      {searchOpen && (
+        <div className="flex items-center gap-2 px-3 py-2 border-b border-border bg-muted/50 shrink-0">
+          <Search className="w-4 h-4 text-muted-foreground shrink-0" />
+          <input
+            ref={searchInputRef}
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            placeholder="Search messages..."
+            className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground text-foreground"
+          />
+          {searchQuery && (
+            <span className="text-xs text-muted-foreground shrink-0">
+              {messages.filter(m => m.content.toLowerCase().includes(searchQuery.toLowerCase())).length} found
+            </span>
+          )}
+          <button onClick={() => { setSearchOpen(false); setSearchQuery(''); }} className="text-muted-foreground hover:text-foreground">
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 scrollbar-thin">
