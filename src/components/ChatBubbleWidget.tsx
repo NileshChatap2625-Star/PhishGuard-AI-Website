@@ -73,6 +73,31 @@ const ChatBubbleWidget: React.FC<ChatBubbleWidgetProps> = ({ embedded = false })
     setMessages([DEFAULT_MSG]);
   }, []);
 
+  const exportAsText = useCallback(() => {
+    const text = messages.map(m => `[${m.role === 'user' ? 'You' : 'PhishGuard AI'}]: ${m.content}`).join('\n\n');
+    const blob = new Blob([text], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `chat-history-${new Date().toISOString().slice(0, 10)}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [messages]);
+
+  const exportAsPdf = useCallback(() => {
+    const content = messages.map(m => {
+      const sender = m.role === 'user' ? 'You' : 'PhishGuard AI';
+      return `<div style="margin-bottom:12px"><strong style="color:${m.role === 'user' ? '#0ea5e9' : '#7c3aed'}">${sender}:</strong><div style="margin-top:4px;white-space:pre-wrap">${m.content.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div></div>`;
+    }).join('');
+    const html = `<html><head><title>Chat History</title><style>body{font-family:Arial,sans-serif;padding:40px;max-width:700px;margin:0 auto}h1{color:#7c3aed;font-size:18px;border-bottom:2px solid #7c3aed;padding-bottom:8px}</style></head><body><h1>PhishGuard AI - Chat History</h1><p style="color:#888;font-size:12px">${new Date().toLocaleString()}</p>${content}</body></html>`;
+    const win = window.open('', '_blank');
+    if (win) {
+      win.document.write(html);
+      win.document.close();
+      setTimeout(() => { win.print(); }, 500);
+    }
+  }, [messages]);
+
   const send = useCallback(async (text: string) => {
     if (!text.trim() || loading) return;
     const userMsg: Msg = { role: 'user', content: text.trim() };
