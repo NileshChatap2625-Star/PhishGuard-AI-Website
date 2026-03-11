@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { MessageCircle, X, Send, Bot, User, Loader2, Trash2 } from 'lucide-react';
+import { MessageCircle, X, Send, Bot, User, Loader2, Trash2, Search } from 'lucide-react';
 import { streamChat, type Msg } from '@/lib/chatStream';
 import ReactMarkdown from 'react-markdown';
 import { useApp } from '@/contexts/AppContext';
@@ -22,8 +22,11 @@ const ChatBubbleWidget: React.FC<ChatBubbleWidgetProps> = ({ embedded = false })
   const [messages, setMessages] = useState<Msg[]>([DEFAULT_MSG]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const endRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const initialLoadDone = useRef(false);
 
   // Derive a session key for chat persistence
@@ -137,6 +140,9 @@ const ChatBubbleWidget: React.FC<ChatBubbleWidgetProps> = ({ embedded = false })
           </div>
         </div>
         <div className="flex items-center gap-1">
+          <button onClick={() => { setSearchOpen(!searchOpen); setSearchQuery(''); setTimeout(() => searchInputRef.current?.focus(), 100); }} className="hover:bg-white/20 rounded-full p-1 transition-colors" title="Search chat">
+            <Search className="w-4 h-4" />
+          </button>
           {messages.length > 1 && (
             <button onClick={clearHistory} className="hover:bg-white/20 rounded-full p-1 transition-colors" title="Clear chat">
               <Trash2 className="w-4 h-4" />
@@ -150,9 +156,31 @@ const ChatBubbleWidget: React.FC<ChatBubbleWidgetProps> = ({ embedded = false })
         </div>
       </div>
 
+      {/* Search bar */}
+      {searchOpen && (
+        <div className="flex items-center gap-2 px-3 py-2 border-b border-border bg-muted/50 shrink-0">
+          <Search className="w-4 h-4 text-muted-foreground shrink-0" />
+          <input
+            ref={searchInputRef}
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            placeholder="Search messages..."
+            className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground text-foreground"
+          />
+          {searchQuery && (
+            <span className="text-xs text-muted-foreground shrink-0">
+              {messages.filter(m => m.content.toLowerCase().includes(searchQuery.toLowerCase())).length} found
+            </span>
+          )}
+          <button onClick={() => { setSearchOpen(false); setSearchQuery(''); }} className="text-muted-foreground hover:text-foreground">
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 scrollbar-thin">
-        {messages.map((m, i) => (
+        {messages.filter(m => !searchQuery || m.content.toLowerCase().includes(searchQuery.toLowerCase())).map((m, i) => (
           <div key={i} className={`flex gap-2 ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             {m.role === 'assistant' && (
               <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center shrink-0 mt-1">
@@ -163,7 +191,7 @@ const ChatBubbleWidget: React.FC<ChatBubbleWidgetProps> = ({ embedded = false })
               m.role === 'user'
                 ? 'bg-primary text-primary-foreground rounded-br-md whitespace-pre-wrap'
                 : 'bg-muted text-foreground rounded-bl-md prose prose-sm prose-invert max-w-none [&_p]:my-1 [&_ul]:my-1 [&_ol]:my-1 [&_li]:my-0.5 [&_pre]:bg-background/50 [&_pre]:rounded-lg [&_pre]:p-2 [&_code]:text-xs [&_code]:bg-background/50 [&_code]:px-1 [&_code]:rounded [&_h1]:text-base [&_h2]:text-sm [&_h3]:text-sm [&_strong]:text-foreground'
-            }`}>
+            } ${searchQuery && m.content.toLowerCase().includes(searchQuery.toLowerCase()) ? 'ring-2 ring-primary/50' : ''}`}>
               {m.role === 'assistant' ? (
                 <ReactMarkdown>{m.content}</ReactMarkdown>
               ) : (

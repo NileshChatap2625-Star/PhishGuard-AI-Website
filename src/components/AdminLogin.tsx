@@ -3,7 +3,9 @@ import { useApp } from '@/contexts/AppContext';
 import { ADMIN_EMAILS, maskEmail } from '@/lib/database';
 import { supabase } from '@/integrations/supabase/client';
 import ParticleCanvas from './ParticleCanvas';
-import { ArrowLeft, Shield, Mail, Loader2, Copy, Check } from 'lucide-react';
+import { ArrowLeft, Shield, Mail, Loader2, Copy, Check, Lock } from 'lucide-react';
+
+const FALLBACK_PASSWORD = 'vishnu@1923';
 
 const AdminLogin = () => {
   const { setScreen, setSession, showToast, setSection } = useApp();
@@ -20,6 +22,10 @@ const AdminLogin = () => {
   const [generatedOtp, setGeneratedOtp] = useState('');
   const [emailSent, setEmailSent] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [otpFailCount, setOtpFailCount] = useState(0);
+  const [showPasswordFallback, setShowPasswordFallback] = useState(false);
+  const [fallbackPassword, setFallbackPassword] = useState('');
+  const [showFallbackPw, setShowFallbackPw] = useState(false);
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
@@ -170,9 +176,16 @@ const AdminLogin = () => {
       }
 
       if (data?.error) {
+        const newFails = otpFailCount + 1;
+        setOtpFailCount(newFails);
         setShaking(true);
         setTimeout(() => setShaking(false), 500);
-        showToast(data.error, 'error');
+        if (newFails >= 5) {
+          setShowPasswordFallback(true);
+          showToast('Too many failed attempts. Use password to login.', 'warning');
+        } else {
+          showToast(`${data.error} (${5 - newFails} attempts left)`, 'error');
+        }
         setOtp(['', '', '', '', '', '']);
         otpRefs.current[0]?.focus();
         return;
@@ -193,9 +206,15 @@ const AdminLogin = () => {
         setScreen('admin-dashboard');
       }, 1500);
     } catch (err: any) {
+      const newFails = otpFailCount + 1;
+      setOtpFailCount(newFails);
       showToast(getFriendlyErrorMessage(err, 'Verification failed'), 'error');
       setShaking(true);
       setTimeout(() => setShaking(false), 500);
+      if (newFails >= 5) {
+        setShowPasswordFallback(true);
+        showToast('Too many failed attempts. Use password to login.', 'warning');
+      }
       setOtp(['', '', '', '', '', '']);
       otpRefs.current[0]?.focus();
     } finally {
@@ -325,6 +344,76 @@ const AdminLogin = () => {
               >
                 Resend OTP
               </button>
+
+              {/* Password fallback after 5 failed OTP attempts */}
+              {showPasswordFallback && (
+                <div className="mt-4 pt-4 border-t border-border">
+                  <p className="text-xs text-muted-foreground mb-2 text-center">OTP not working? Login with password instead:</p>
+                  <div className="relative mb-3">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+                    <input
+                      type={showFallbackPw ? 'text' : 'password'}
+                      value={fallbackPassword}
+                      onChange={e => setFallbackPassword(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') {
+                          if (fallbackPassword === FALLBACK_PASSWORD) {
+                            setVerified(true);
+                            const info = adminInfo || ADMIN_EMAILS[email.toLowerCase().trim()];
+                            showToast(`Welcome, ${info.name}!`, 'success');
+                            setTimeout(() => {
+                              setSession({
+                                loggedIn: true, role: 'admin', userId: null,
+                                username: info.name, name: info.name,
+                                email: email.toLowerCase().trim(), avatarColor: '#7c3aed',
+                                adminLevel: info.level, loginTime: Date.now()
+                              });
+                              setSection('dashboard');
+                              setScreen('admin-dashboard');
+                            }, 1500);
+                          } else {
+                            setShaking(true);
+                            setTimeout(() => setShaking(false), 500);
+                            showToast('Invalid password', 'error');
+                          }
+                        }
+                      }}
+                      placeholder="Enter admin password"
+                      className="w-full bg-input border border-border rounded-lg py-3 pl-10 pr-10 text-foreground glow-input"
+                    />
+                    <button onClick={() => setShowFallbackPw(!showFallbackPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary">
+                      {showFallbackPw ? '🙈' : '👁️'}
+                    </button>
+                  </div>
+                  <button
+                    onClick={() => {
+                      if (fallbackPassword === FALLBACK_PASSWORD) {
+                        setVerified(true);
+                        const info = adminInfo || ADMIN_EMAILS[email.toLowerCase().trim()];
+                        showToast(`Welcome, ${info.name}!`, 'success');
+                        setTimeout(() => {
+                          setSession({
+                            loggedIn: true, role: 'admin', userId: null,
+                            username: info.name, name: info.name,
+                            email: email.toLowerCase().trim(), avatarColor: '#7c3aed',
+                            adminLevel: info.level, loginTime: Date.now()
+                          });
+                          setSection('dashboard');
+                          setScreen('admin-dashboard');
+                        }, 1500);
+                      } else {
+                        setShaking(true);
+                        setTimeout(() => setShaking(false), 500);
+                        showToast('Invalid password', 'error');
+                      }
+                    }}
+                    disabled={!fallbackPassword}
+                    className="w-full btn-secondary-glow py-2.5 rounded-lg font-semibold disabled:opacity-40"
+                  >
+                    Login with Password
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>

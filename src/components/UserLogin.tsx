@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import ParticleCanvas from './ParticleCanvas';
-import { ArrowLeft, Shield, Eye, EyeOff, User, Lock } from 'lucide-react';
+import { ArrowLeft, Shield, Eye, EyeOff, User, Lock, Mail } from 'lucide-react';
 
 const UserLogin = () => {
   const { db, setScreen, setSession, showToast, setSection } = useApp();
@@ -72,14 +72,14 @@ const UserLogin = () => {
     const user = db.queryOne('SELECT * FROM users WHERE username=? OR email=?', [forgotId, forgotId]);
     if (!user) { showToast('Account not found', 'error'); return; }
     setForgotUser(user);
-    setForgotStep(2);
+    setForgotStep(2); // show "email sent" confirmation
   };
 
   const handleResetPassword = () => {
     if (newPw.length < 8) { showToast('Password must be 8+ chars', 'warning'); return; }
     if (newPw !== confirmPw) { showToast('Passwords do not match', 'error'); return; }
     db!.run('UPDATE users SET password=? WHERE id=?', [newPw, forgotUser.id]);
-    showToast('Password updated!', 'success');
+    showToast('Password updated! Please login with your new password.', 'success');
     setShowForgot(false); setForgotStep(1); setForgotUser(null);
     setNewPw(''); setConfirmPw(''); setForgotId('');
   };
@@ -158,15 +158,29 @@ const UserLogin = () => {
             <h3 className="font-orbitron text-lg text-primary mb-4">Reset Password</h3>
             {forgotStep === 1 && (
               <div className="space-y-3">
+                <p className="text-sm text-muted-foreground mb-1">Enter your username or email to receive a password reset link.</p>
                 <input value={forgotId} onChange={e => setForgotId(e.target.value)}
                   placeholder="Username or Email"
                   className="w-full bg-input border border-border rounded-lg py-2.5 px-4 text-foreground glow-input" />
-                <button onClick={handleForgotFind} className="w-full btn-primary-glow py-2.5 rounded-lg">Find Account</button>
+                <button onClick={handleForgotFind} className="w-full btn-primary-glow py-2.5 rounded-lg">Send Reset Link</button>
               </div>
             )}
             {forgotStep === 2 && forgotUser && (
+              <div className="space-y-3 text-center">
+                <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center mx-auto">
+                  <Mail className="w-6 h-6 text-primary" />
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  A password reset link has been sent to
+                </p>
+                <p className="text-primary font-medium">{forgotUser.email.replace(/(.{2})(.*)(@.*)/, '$1****$3')}</p>
+                <p className="text-xs text-muted-foreground">Check your inbox and click the link to continue.</p>
+                <button onClick={() => setForgotStep(3)} className="w-full btn-primary-glow py-2.5 rounded-lg">Continue to Reset Password</button>
+              </div>
+            )}
+            {forgotStep === 3 && forgotUser && (
               <div className="space-y-3">
-                <p className="text-sm text-muted-foreground">Account: <span className="text-primary">{forgotUser.full_name.slice(0,2)}***</span></p>
+                <p className="text-sm text-muted-foreground">Create a new password for <span className="text-primary">{forgotUser.username}</span></p>
                 <input type="password" value={newPw} onChange={e => setNewPw(e.target.value)}
                   placeholder="New Password (8+ chars)"
                   className="w-full bg-input border border-border rounded-lg py-2.5 px-4 text-foreground glow-input" />
