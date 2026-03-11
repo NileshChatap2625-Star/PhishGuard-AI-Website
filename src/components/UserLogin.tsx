@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import ParticleCanvas from './ParticleCanvas';
-import { ArrowLeft, Shield, Eye, EyeOff, User, Lock } from 'lucide-react';
+import { ArrowLeft, Shield, Eye, EyeOff, User, Lock, Mail } from 'lucide-react';
 
 const UserLogin = () => {
   const { db, setScreen, setSession, showToast, setSection } = useApp();

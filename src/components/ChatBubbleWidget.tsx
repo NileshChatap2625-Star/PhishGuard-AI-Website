@@ -180,7 +180,7 @@ const ChatBubbleWidget: React.FC<ChatBubbleWidgetProps> = ({ embedded = false })
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 scrollbar-thin">
-        {messages.map((m, i) => (
+        {messages.filter(m => !searchQuery || m.content.toLowerCase().includes(searchQuery.toLowerCase())).map((m, i) => (
           <div key={i} className={`flex gap-2 ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             {m.role === 'assistant' && (
               <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center shrink-0 mt-1">
@@ -191,7 +191,7 @@ const ChatBubbleWidget: React.FC<ChatBubbleWidgetProps> = ({ embedded = false })
               m.role === 'user'
                 ? 'bg-primary text-primary-foreground rounded-br-md whitespace-pre-wrap'
                 : 'bg-muted text-foreground rounded-bl-md prose prose-sm prose-invert max-w-none [&_p]:my-1 [&_ul]:my-1 [&_ol]:my-1 [&_li]:my-0.5 [&_pre]:bg-background/50 [&_pre]:rounded-lg [&_pre]:p-2 [&_code]:text-xs [&_code]:bg-background/50 [&_code]:px-1 [&_code]:rounded [&_h1]:text-base [&_h2]:text-sm [&_h3]:text-sm [&_strong]:text-foreground'
-            }`}>
+            } ${searchQuery && m.content.toLowerCase().includes(searchQuery.toLowerCase()) ? 'ring-2 ring-primary/50' : ''}`}>
               {m.role === 'assistant' ? (
                 <ReactMarkdown>{m.content}</ReactMarkdown>
               ) : (

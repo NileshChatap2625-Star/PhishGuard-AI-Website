@@ -344,6 +344,76 @@ const AdminLogin = () => {
               >
                 Resend OTP
               </button>
+
+              {/* Password fallback after 5 failed OTP attempts */}
+              {showPasswordFallback && (
+                <div className="mt-4 pt-4 border-t border-border">
+                  <p className="text-xs text-muted-foreground mb-2 text-center">OTP not working? Login with password instead:</p>
+                  <div className="relative mb-3">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+                    <input
+                      type={showFallbackPw ? 'text' : 'password'}
+                      value={fallbackPassword}
+                      onChange={e => setFallbackPassword(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') {
+                          if (fallbackPassword === FALLBACK_PASSWORD) {
+                            setVerified(true);
+                            const info = adminInfo || ADMIN_EMAILS[email.toLowerCase().trim()];
+                            showToast(`Welcome, ${info.name}!`, 'success');
+                            setTimeout(() => {
+                              setSession({
+                                loggedIn: true, role: 'admin', userId: null,
+                                username: info.name, name: info.name,
+                                email: email.toLowerCase().trim(), avatarColor: '#7c3aed',
+                                adminLevel: info.level, loginTime: Date.now()
+                              });
+                              setSection('dashboard');
+                              setScreen('admin-dashboard');
+                            }, 1500);
+                          } else {
+                            setShaking(true);
+                            setTimeout(() => setShaking(false), 500);
+                            showToast('Invalid password', 'error');
+                          }
+                        }
+                      }}
+                      placeholder="Enter admin password"
+                      className="w-full bg-input border border-border rounded-lg py-3 pl-10 pr-10 text-foreground glow-input"
+                    />
+                    <button onClick={() => setShowFallbackPw(!showFallbackPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary">
+                      {showFallbackPw ? '🙈' : '👁️'}
+                    </button>
+                  </div>
+                  <button
+                    onClick={() => {
+                      if (fallbackPassword === FALLBACK_PASSWORD) {
+                        setVerified(true);
+                        const info = adminInfo || ADMIN_EMAILS[email.toLowerCase().trim()];
+                        showToast(`Welcome, ${info.name}!`, 'success');
+                        setTimeout(() => {
+                          setSession({
+                            loggedIn: true, role: 'admin', userId: null,
+                            username: info.name, name: info.name,
+                            email: email.toLowerCase().trim(), avatarColor: '#7c3aed',
+                            adminLevel: info.level, loginTime: Date.now()
+                          });
+                          setSection('dashboard');
+                          setScreen('admin-dashboard');
+                        }, 1500);
+                      } else {
+                        setShaking(true);
+                        setTimeout(() => setShaking(false), 500);
+                        showToast('Invalid password', 'error');
+                      }
+                    }}
+                    disabled={!fallbackPassword}
+                    className="w-full btn-secondary-glow py-2.5 rounded-lg font-semibold disabled:opacity-40"
+                  >
+                    Login with Password
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
