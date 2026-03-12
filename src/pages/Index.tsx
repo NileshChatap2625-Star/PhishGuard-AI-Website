@@ -4,6 +4,7 @@ import AdminLogin from '@/components/AdminLogin';
 import UserLogin from '@/components/UserLogin';
 import UserRegister from '@/components/UserRegister';
 import UserResetPassword from '@/components/UserResetPassword';
+import SimulatedInbox from '@/components/SimulatedInbox';
 import DashboardLayout from '@/components/DashboardLayout';
 import UserDashboardHome from '@/components/UserDashboardHome';
 import URLScanner from '@/components/URLScanner';
