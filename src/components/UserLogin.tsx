@@ -163,7 +163,6 @@ const UserLogin = () => {
                 username={forgotUser.username}
                 maskedEmail={forgotUser.email.replace(/(.{2})(.*)(@.*)/, '$1****$3')}
                 onClose={() => { setShowForgot(false); setForgotStep(1); setForgotId(''); setForgotUser(null); }}
-                onResetClick={() => { setShowForgot(false); setScreen('user-reset-password'); }}
               />
             )}
             <button onClick={() => { setShowForgot(false); setForgotStep(1); }} className="w-full text-sm text-muted-foreground mt-3 hover:text-foreground">Cancel</button>
