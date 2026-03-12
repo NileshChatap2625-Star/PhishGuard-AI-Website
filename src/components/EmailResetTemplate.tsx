@@ -6,7 +6,7 @@ interface EmailResetTemplateProps {
   onClose: () => void;
 }
 
-const EmailResetTemplate = ({ username, maskedEmail, onClose, onResetClick }: EmailResetTemplateProps) => {
+const EmailResetTemplate = ({ username, maskedEmail, onClose }: EmailResetTemplateProps) => {
   return (
     <div className="space-y-4">
       <div className="text-center mb-2">
