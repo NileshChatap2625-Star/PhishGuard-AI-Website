@@ -4,7 +4,6 @@ interface EmailResetTemplateProps {
   username: string;
   maskedEmail: string;
   onClose: () => void;
-  onResetClick: () => void;
 }
 
 const EmailResetTemplate = ({ username, maskedEmail, onClose, onResetClick }: EmailResetTemplateProps) => {
