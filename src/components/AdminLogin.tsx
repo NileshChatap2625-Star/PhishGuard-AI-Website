@@ -281,7 +281,7 @@ const AdminLogin = () => {
               {Object.entries(ADMIN_EMAILS).map(([adminEmail, info]) => (
                 <button
                   key={adminEmail}
-                  onClick={() => { setEmail(adminEmail); setTimeout(() => handleSendOTP(), 0); }}
+                  onClick={() => handleSendOTP(adminEmail)}
                   disabled={loading}
                   className="w-full flex items-center gap-3 bg-input border border-border rounded-lg p-4 text-left hover:border-secondary transition disabled:opacity-40"
                 >
