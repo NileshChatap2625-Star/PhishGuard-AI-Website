@@ -11,7 +11,6 @@ const corsHeaders = {
 
 const ADMIN_EMAILS: Record<string, { name: string; level: string }> = {
   "vishnubabalsure@gmail.com": { name: "Vishnu Babalsure", level: "Super Admin" },
-  "nileshchatap25@gmail.com": { name: "Nilesh Chatap", level: "Admin" },
 };
 
 Deno.serve(async (req) => {
