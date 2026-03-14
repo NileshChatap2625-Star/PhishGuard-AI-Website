@@ -3,13 +3,17 @@ import { useApp } from '@/contexts/AppContext';
 import { ADMIN_EMAILS, maskEmail } from '@/lib/database';
 import { supabase } from '@/integrations/supabase/client';
 import ParticleCanvas from './ParticleCanvas';
-import { ArrowLeft, Shield, Mail, Loader2, Copy, Check, Lock } from 'lucide-react';
+import { ArrowLeft, Shield, Mail, Loader2, Copy, Check, Lock, Eye, EyeOff } from 'lucide-react';
 
-const FALLBACK_PASSWORD = 'vishnu@1923';
+const VISHNU_EMAIL = 'vishnubabalsure@gmail.com';
+const NILESH_EMAIL = 'nileshchatap25@gmail.com';
+const NILESH_PASSWORD = 'Nilesh@2625';
+const VISHNU_FALLBACK_PASSWORD = 'vishnu@1923';
 
 const AdminLogin = () => {
   const { setScreen, setSession, showToast, setSection } = useApp();
-  const [step, setStep] = useState<1 | 2>(1);
+  // 'select' | 'otp' | 'password'
+  const [step, setStep] = useState<'select' | 'otp' | 'password'>('select');
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [adminInfo, setAdminInfo] = useState<{ name: string; level: string } | null>(null);
@@ -19,17 +23,14 @@ const AdminLogin = () => {
   const [shaking, setShaking] = useState(false);
   const [verified, setVerified] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [generatedOtp, setGeneratedOtp] = useState('');
-  const [emailSent, setEmailSent] = useState(false);
-  const [copied, setCopied] = useState(false);
   const [otpFailCount, setOtpFailCount] = useState(0);
   const [showPasswordFallback, setShowPasswordFallback] = useState(false);
-  const [fallbackPassword, setFallbackPassword] = useState('');
-  const [showFallbackPw, setShowFallbackPw] = useState(false);
+  const [password, setPassword] = useState('');
+  const [showPw, setShowPw] = useState(false);
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
-    if (step !== 2 || timer <= 0) return;
+    if (step !== 'otp' || timer <= 0) return;
     const id = setInterval(() => setTimer(t => t - 1), 1000);
     return () => clearInterval(id);
   }, [step, timer]);
@@ -48,67 +49,57 @@ const AdminLogin = () => {
   const invokeOtpAction = async (payload: { action: 'send' | 'verify'; email: string; otp?: string }) => {
     const maxAttempts = 2;
     let lastError: any = null;
-
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       const { data, error } = await supabase.functions.invoke('send-admin-otp', { body: payload });
-
       if (!error) return { data, error: null };
-
       lastError = error;
       const message = String(error.message || '').toLowerCase();
-      const isTransientNetworkError =
-        message.includes('failed to send a request to the edge function') ||
-        message.includes('failed to fetch') ||
-        message.includes('network');
-
-      if (!isTransientNetworkError || attempt === maxAttempts) break;
+      const isTransient = message.includes('failed to send a request to the edge function') || message.includes('failed to fetch') || message.includes('network');
+      if (!isTransient || attempt === maxAttempts) break;
       await new Promise(resolve => setTimeout(resolve, 700));
     }
-
     return { data: null, error: lastError };
   };
 
   const getFriendlyErrorMessage = (err: any, fallback: string) => {
     const raw = String(err?.message || fallback);
-    const message = raw.toLowerCase();
-
-    if (message.includes('failed to send a request to the edge function') || message.includes('failed to fetch')) {
+    if (raw.toLowerCase().includes('failed to send a request to the edge function') || raw.toLowerCase().includes('failed to fetch')) {
       return 'Temporary network issue. Please retry once.';
     }
-
     return raw;
   };
 
-  const handleSendOTP = async (targetEmail?: string) => {
-    const normalizedEmail = (targetEmail || email).toLowerCase().trim();
-    const info = ADMIN_EMAILS[normalizedEmail];
-    if (!info) {
-      setShaking(true);
-      setTimeout(() => setShaking(false), 500);
-      showToast('Unauthorized email address', 'error');
-      return;
-    }
+  const loginSuccess = (info: { name: string; level: string }, adminEmail: string) => {
+    setVerified(true);
+    showToast(`Welcome, ${info.name}!`, 'success');
+    setTimeout(() => {
+      setSession({
+        loggedIn: true, role: 'admin', userId: null,
+        username: info.name, name: info.name,
+        email: adminEmail, avatarColor: '#7c3aed',
+        adminLevel: info.level, loginTime: Date.now()
+      });
+      setSection('dashboard');
+      setScreen('admin-dashboard');
+    }, 1500);
+  };
 
-    setEmail(normalizedEmail);
+  // Vishnu: Send OTP via email
+  const handleSendOTP = async () => {
+    const info = ADMIN_EMAILS[VISHNU_EMAIL];
+    setEmail(VISHNU_EMAIL);
+    setAdminInfo(info);
     setLoading(true);
     try {
-      const { data, error } = await invokeOtpAction({
-        action: 'send',
-        email: normalizedEmail,
-      });
-
+      const { data, error } = await invokeOtpAction({ action: 'send', email: VISHNU_EMAIL });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
-
-      setAdminInfo(data.adminInfo || info);
-      setEmailSent(!!data.emailSent);
-      setGeneratedOtp(data.otpCode || '');
       setTimer(300);
-      showToast(data.emailSent ? `OTP sent to ${maskEmail(normalizedEmail)}` : 'OTP generated successfully!', 'success');
-      setStep(2);
+      showToast(data.emailSent ? `OTP sent to ${maskEmail(VISHNU_EMAIL)}. Check your inbox!` : 'OTP generated! Check your email.', 'success');
+      setStep('otp');
       setTimeout(() => otpRefs.current[0]?.focus(), 100);
     } catch (err: any) {
-      showToast(getFriendlyErrorMessage(err, 'Failed to generate OTP'), 'error');
+      showToast(getFriendlyErrorMessage(err, 'Failed to send OTP'), 'error');
       setShaking(true);
       setTimeout(() => setShaking(false), 500);
     } finally {
@@ -116,11 +107,23 @@ const AdminLogin = () => {
     }
   };
 
-  const handleCopyOtp = () => {
-    navigator.clipboard.writeText(generatedOtp);
-    setCopied(true);
-    showToast('OTP copied!', 'success');
-    setTimeout(() => setCopied(false), 2000);
+  // Nilesh: Show password step
+  const handleNileshClick = () => {
+    const info = ADMIN_EMAILS[NILESH_EMAIL];
+    setEmail(NILESH_EMAIL);
+    setAdminInfo(info);
+    setStep('password');
+  };
+
+  // Nilesh: Verify password
+  const handlePasswordLogin = () => {
+    if (password === NILESH_PASSWORD) {
+      loginSuccess(adminInfo || ADMIN_EMAILS[NILESH_EMAIL], NILESH_EMAIL);
+    } else {
+      setShaking(true);
+      setTimeout(() => setShaking(false), 500);
+      showToast('Invalid password', 'error');
+    }
   };
 
   const handleOTPChange = useCallback((index: number, value: string) => {
@@ -149,24 +152,15 @@ const AdminLogin = () => {
   const handleVerify = async () => {
     if (locked) return;
     const code = otp.join('');
-    const normalizedEmail = email.toLowerCase().trim();
-
     if (timer <= 0) {
       showToast('OTP expired. Please resend.', 'error');
       setOtp(['', '', '', '', '', '']);
       return;
     }
-
     setLoading(true);
     try {
-      const { data, error } = await invokeOtpAction({
-        action: 'verify',
-        email: normalizedEmail,
-        otp: code,
-      });
-
+      const { data, error } = await invokeOtpAction({ action: 'verify', email: VISHNU_EMAIL, otp: code });
       if (error) throw error;
-
       if (data?.locked) {
         setLocked(true);
         setLockTimer(120);
@@ -175,7 +169,6 @@ const AdminLogin = () => {
         otpRefs.current[0]?.focus();
         return;
       }
-
       if (data?.error) {
         const newFails = otpFailCount + 1;
         setOtpFailCount(newFails);
@@ -191,21 +184,8 @@ const AdminLogin = () => {
         otpRefs.current[0]?.focus();
         return;
       }
-
-      // Success
       const verifiedInfo = data.adminInfo || adminInfo!;
-      setVerified(true);
-      showToast(`Welcome, ${verifiedInfo.name}!`, 'success');
-      setTimeout(() => {
-        setSession({
-          loggedIn: true, role: 'admin', userId: null,
-          username: verifiedInfo.name, name: verifiedInfo.name,
-          email: normalizedEmail, avatarColor: '#7c3aed',
-          adminLevel: verifiedInfo.level, loginTime: Date.now()
-        });
-        setSection('dashboard');
-        setScreen('admin-dashboard');
-      }, 1500);
+      loginSuccess(verifiedInfo, VISHNU_EMAIL);
     } catch (err: any) {
       const newFails = otpFailCount + 1;
       setOtpFailCount(newFails);
@@ -214,7 +194,6 @@ const AdminLogin = () => {
       setTimeout(() => setShaking(false), 500);
       if (newFails >= 5) {
         setShowPasswordFallback(true);
-        showToast('Too many failed attempts. Use password to login.', 'warning');
       }
       setOtp(['', '', '', '', '', '']);
       otpRefs.current[0]?.focus();
@@ -224,21 +203,14 @@ const AdminLogin = () => {
   };
 
   const handleResend = async () => {
-    const normalizedEmail = email.toLowerCase().trim();
     setLoading(true);
     try {
-      const { data, error } = await invokeOtpAction({
-        action: 'send',
-        email: normalizedEmail,
-      });
+      const { data, error } = await invokeOtpAction({ action: 'send', email: VISHNU_EMAIL });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
-
-      setGeneratedOtp(data.otpCode || '');
-      setEmailSent(!!data.emailSent);
       setTimer(300);
       setOtp(['', '', '', '', '', '']);
-      showToast('New OTP generated!', 'success');
+      showToast('New OTP sent! Check your email.', 'success');
       otpRefs.current[0]?.focus();
     } catch (err: any) {
       showToast(getFriendlyErrorMessage(err, 'Failed to resend OTP'), 'error');
@@ -266,7 +238,7 @@ const AdminLogin = () => {
     <div className="fixed inset-0 flex items-center justify-center bg-background overflow-hidden">
       <ParticleCanvas />
       <div className="relative z-10 w-full max-w-md px-4">
-        <button onClick={() => setScreen('role-selection')} className="flex items-center gap-2 text-muted-foreground hover:text-primary transition mb-6">
+        <button onClick={() => step === 'select' ? setScreen('role-selection') : setStep('select')} className="flex items-center gap-2 text-muted-foreground hover:text-primary transition mb-6">
           <ArrowLeft size={18} /> Back
         </button>
         <div className="glass-strong p-8 rounded-2xl glow-purple">
@@ -275,52 +247,80 @@ const AdminLogin = () => {
             <h2 className="font-orbitron text-xl text-secondary">Admin Access Portal</h2>
           </div>
 
-          {step === 1 ? (
+          {/* Step 1: Select admin account */}
+          {step === 'select' && (
             <div className={`space-y-3 ${shaking ? 'shake' : ''}`}>
               <label className="text-sm text-muted-foreground mb-1 block">Select your admin account</label>
-              {Object.entries(ADMIN_EMAILS).map(([adminEmail, info]) => (
-                <button
-                  key={adminEmail}
-                  onClick={() => handleSendOTP(adminEmail)}
-                  disabled={loading}
-                  className="w-full flex items-center gap-3 bg-input border border-border rounded-lg p-4 text-left hover:border-secondary transition disabled:opacity-40"
-                >
-                  <div className="w-10 h-10 rounded-full bg-secondary/20 flex items-center justify-center shrink-0">
-                    <Mail className="text-secondary" size={18} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-foreground">{info.name}</p>
-                    <p className="text-xs text-muted-foreground truncate">{adminEmail}</p>
-                  </div>
-                  <span className="text-xs text-secondary font-medium shrink-0">
-                    {loading && email === adminEmail ? (
-                      <Loader2 className="animate-spin" size={16} />
-                    ) : 'Send OTP →'}
-                  </span>
-                </button>
-              ))}
+              {/* Vishnu - OTP login */}
+              <button
+                onClick={handleSendOTP}
+                disabled={loading}
+                className="w-full flex items-center gap-3 bg-input border border-border rounded-lg p-4 text-left hover:border-secondary transition disabled:opacity-40"
+              >
+                <div className="w-10 h-10 rounded-full bg-secondary/20 flex items-center justify-center shrink-0">
+                  <Mail className="text-secondary" size={18} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-foreground">Vishnu Babalsure</p>
+                  <p className="text-xs text-muted-foreground">OTP via Email</p>
+                </div>
+                <span className="text-xs text-secondary font-medium shrink-0">
+                  {loading ? <Loader2 className="animate-spin" size={16} /> : 'Send OTP →'}
+                </span>
+              </button>
+              {/* Nilesh - Password login */}
+              <button
+                onClick={handleNileshClick}
+                className="w-full flex items-center gap-3 bg-input border border-border rounded-lg p-4 text-left hover:border-secondary transition"
+              >
+                <div className="w-10 h-10 rounded-full bg-secondary/20 flex items-center justify-center shrink-0">
+                  <Lock className="text-secondary" size={18} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-foreground">Nilesh Chatap</p>
+                  <p className="text-xs text-muted-foreground">Password Login</p>
+                </div>
+                <span className="text-xs text-secondary font-medium shrink-0">Login →</span>
+              </button>
             </div>
-          ) : (
+          )}
+
+          {/* Step: Nilesh password login */}
+          {step === 'password' && (
+            <div className={shaking ? 'shake' : ''}>
+              <p className="text-center text-muted-foreground text-sm mb-4">
+                Login as <span className="text-primary font-semibold">Nilesh Chatap</span>
+              </p>
+              <div className="relative mb-4">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+                <input
+                  type={showPw ? 'text' : 'password'}
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handlePasswordLogin()}
+                  placeholder="Enter password"
+                  className="w-full bg-input border border-border rounded-lg py-3 pl-10 pr-10 text-foreground glow-input focus:border-secondary"
+                />
+                <button onClick={() => setShowPw(!showPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary">
+                  {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+              <button
+                onClick={handlePasswordLogin}
+                disabled={!password}
+                className="w-full btn-secondary-glow py-3 rounded-lg font-semibold disabled:opacity-40"
+              >
+                Login
+              </button>
+            </div>
+          )}
+
+          {/* Step: Vishnu OTP verification */}
+          {step === 'otp' && (
             <div>
               <p className="text-center text-muted-foreground text-sm mb-4">
-                {emailSent 
-                  ? <>OTP sent to <span className="text-primary">{maskEmail(email)}</span>. Check your inbox!</>
-                  : <>OTP generated for <span className="text-primary">{maskEmail(email)}</span></>
-                }
+                OTP sent to <span className="text-primary">{maskEmail(VISHNU_EMAIL)}</span>. Check your inbox!
               </p>
-
-              {/* Show generated OTP only if email was NOT sent (fallback) */}
-              {!emailSent && generatedOtp && (
-                <div className="mb-4 p-3 rounded-lg bg-secondary/10 border border-secondary/30 text-center">
-                  <p className="text-xs text-muted-foreground mb-1">Your Verification Code</p>
-                  <div className="flex items-center justify-center gap-2">
-                    <span className="font-mono text-2xl font-bold text-secondary tracking-[6px]">{generatedOtp}</span>
-                    <button onClick={handleCopyOtp} className="text-muted-foreground hover:text-secondary transition p-1">
-                      {copied ? <Check size={16} /> : <Copy size={16} />}
-                    </button>
-                  </div>
-                </div>
-              )}
 
               <div className={`flex justify-center gap-2 mb-4 ${shaking ? 'shake' : ''}`} onPaste={handleOTPPaste}>
                 {otp.map((digit, i) => (
@@ -354,69 +354,43 @@ const AdminLogin = () => {
                 Resend OTP
               </button>
 
-              {/* Password fallback after 5 failed OTP attempts */}
+              {/* Vishnu password fallback after 5 failed OTP attempts */}
               {showPasswordFallback && (
                 <div className="mt-4 pt-4 border-t border-border">
-                  <p className="text-xs text-muted-foreground mb-2 text-center">OTP not working? Login with password instead:</p>
+                  <p className="text-xs text-muted-foreground mb-2 text-center">OTP not working? Login with password:</p>
                   <div className="relative mb-3">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
                     <input
-                      type={showFallbackPw ? 'text' : 'password'}
-                      value={fallbackPassword}
-                      onChange={e => setFallbackPassword(e.target.value)}
+                      type={showPw ? 'text' : 'password'}
+                      value={password}
+                      onChange={e => setPassword(e.target.value)}
                       onKeyDown={e => {
-                        if (e.key === 'Enter') {
-                          if (fallbackPassword === FALLBACK_PASSWORD) {
-                            setVerified(true);
-                            const info = adminInfo || ADMIN_EMAILS[email.toLowerCase().trim()];
-                            showToast(`Welcome, ${info.name}!`, 'success');
-                            setTimeout(() => {
-                              setSession({
-                                loggedIn: true, role: 'admin', userId: null,
-                                username: info.name, name: info.name,
-                                email: email.toLowerCase().trim(), avatarColor: '#7c3aed',
-                                adminLevel: info.level, loginTime: Date.now()
-                              });
-                              setSection('dashboard');
-                              setScreen('admin-dashboard');
-                            }, 1500);
-                          } else {
-                            setShaking(true);
-                            setTimeout(() => setShaking(false), 500);
-                            showToast('Invalid password', 'error');
-                          }
+                        if (e.key === 'Enter' && password === VISHNU_FALLBACK_PASSWORD) {
+                          loginSuccess(adminInfo || ADMIN_EMAILS[VISHNU_EMAIL], VISHNU_EMAIL);
+                        } else if (e.key === 'Enter') {
+                          setShaking(true);
+                          setTimeout(() => setShaking(false), 500);
+                          showToast('Invalid password', 'error');
                         }
                       }}
                       placeholder="Enter admin password"
                       className="w-full bg-input border border-border rounded-lg py-3 pl-10 pr-10 text-foreground glow-input"
                     />
-                    <button onClick={() => setShowFallbackPw(!showFallbackPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary">
-                      {showFallbackPw ? '🙈' : '👁️'}
+                    <button onClick={() => setShowPw(!showPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary">
+                      {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
                     </button>
                   </div>
                   <button
                     onClick={() => {
-                      if (fallbackPassword === FALLBACK_PASSWORD) {
-                        setVerified(true);
-                        const info = adminInfo || ADMIN_EMAILS[email.toLowerCase().trim()];
-                        showToast(`Welcome, ${info.name}!`, 'success');
-                        setTimeout(() => {
-                          setSession({
-                            loggedIn: true, role: 'admin', userId: null,
-                            username: info.name, name: info.name,
-                            email: email.toLowerCase().trim(), avatarColor: '#7c3aed',
-                            adminLevel: info.level, loginTime: Date.now()
-                          });
-                          setSection('dashboard');
-                          setScreen('admin-dashboard');
-                        }, 1500);
+                      if (password === VISHNU_FALLBACK_PASSWORD) {
+                        loginSuccess(adminInfo || ADMIN_EMAILS[VISHNU_EMAIL], VISHNU_EMAIL);
                       } else {
                         setShaking(true);
                         setTimeout(() => setShaking(false), 500);
                         showToast('Invalid password', 'error');
                       }
                     }}
-                    disabled={!fallbackPassword}
+                    disabled={!password}
                     className="w-full btn-secondary-glow py-2.5 rounded-lg font-semibold disabled:opacity-40"
                   >
                     Login with Password
