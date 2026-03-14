@@ -79,8 +79,8 @@ const AdminLogin = () => {
     return raw;
   };
 
-  const handleSendOTP = async () => {
-    const normalizedEmail = email.toLowerCase().trim();
+  const handleSendOTP = async (targetEmail?: string) => {
+    const normalizedEmail = (targetEmail || email).toLowerCase().trim();
     const info = ADMIN_EMAILS[normalizedEmail];
     if (!info) {
       setShaking(true);
@@ -89,6 +89,7 @@ const AdminLogin = () => {
       return;
     }
 
+    setEmail(normalizedEmail);
     setLoading(true);
     try {
       const { data, error } = await invokeOtpAction({
@@ -103,7 +104,7 @@ const AdminLogin = () => {
       setEmailSent(!!data.emailSent);
       setGeneratedOtp(data.otpCode || '');
       setTimer(300);
-      showToast(data.emailSent ? `OTP sent to ${maskEmail(email)}` : 'OTP generated successfully!', 'success');
+      showToast(data.emailSent ? `OTP sent to ${maskEmail(normalizedEmail)}` : 'OTP generated successfully!', 'success');
       setStep(2);
       setTimeout(() => otpRefs.current[0]?.focus(), 100);
     } catch (err: any) {
@@ -275,21 +276,29 @@ const AdminLogin = () => {
           </div>
 
           {step === 1 ? (
-            <div className={shaking ? 'shake' : ''}>
-              <label className="text-sm text-muted-foreground mb-2 block">Admin Email</label>
-              <div className="relative mb-4">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
-                <input
-                  type="email" value={email} onChange={e => setEmail(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && !loading && handleSendOTP()}
-                  placeholder="Enter admin email"
-                  className="w-full bg-input border border-border rounded-lg py-3 pl-10 pr-4 text-foreground glow-input focus:border-secondary"
+            <div className={`space-y-3 ${shaking ? 'shake' : ''}`}>
+              <label className="text-sm text-muted-foreground mb-1 block">Select your admin account</label>
+              {Object.entries(ADMIN_EMAILS).map(([adminEmail, info]) => (
+                <button
+                  key={adminEmail}
+                  onClick={() => handleSendOTP(adminEmail)}
                   disabled={loading}
-                />
-              </div>
-              <button onClick={handleSendOTP} disabled={loading} className="w-full btn-secondary-glow py-3 rounded-lg font-semibold disabled:opacity-40 flex items-center justify-center gap-2">
-                {loading ? <><Loader2 className="animate-spin" size={18} /> Sending...</> : 'Send OTP'}
-              </button>
+                  className="w-full flex items-center gap-3 bg-input border border-border rounded-lg p-4 text-left hover:border-secondary transition disabled:opacity-40"
+                >
+                  <div className="w-10 h-10 rounded-full bg-secondary/20 flex items-center justify-center shrink-0">
+                    <Mail className="text-secondary" size={18} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground">{info.name}</p>
+                    <p className="text-xs text-muted-foreground truncate">{adminEmail}</p>
+                  </div>
+                  <span className="text-xs text-secondary font-medium shrink-0">
+                    {loading && email === adminEmail ? (
+                      <Loader2 className="animate-spin" size={16} />
+                    ) : 'Send OTP →'}
+                  </span>
+                </button>
+              ))}
             </div>
           ) : (
             <div>
