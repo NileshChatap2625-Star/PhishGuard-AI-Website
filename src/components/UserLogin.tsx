@@ -160,6 +160,13 @@ const UserLogin = () => {
                   <a href="mailto:vishnubabalsure@gmail.com" className="text-xs text-primary hover:underline">vishnubabalsure@gmail.com</a>
                 </div>
               </div>
+              <div className="flex items-center gap-3 bg-muted/50 border border-border rounded-lg p-3">
+                <Shield className="text-primary shrink-0" size={20} />
+                <div>
+                  <p className="text-sm font-medium text-foreground">Nilesh Chatap</p>
+                  <a href="mailto:nileshchatap25@gmail.com" className="text-xs text-primary hover:underline">nileshchatap25@gmail.com</a>
+                </div>
+              </div>
             </div>
             <button onClick={() => setShowForgot(false)} className="w-full btn-primary-glow py-2.5 rounded-lg font-semibold">Close</button>
           </div>
