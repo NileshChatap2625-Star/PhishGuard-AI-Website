@@ -44,10 +44,11 @@ PhishGuard AI helps solve this problem by providing a quick and reliable way to 
 
 ## 🛠️ Technologies Used
 
-- Python
-- Machine Learning
-- HTML / CSS / JavaScript
-- AI-based URL analysis
+- Python.
+- Machine Learning.
+- HTML / CSS / JavaScript.
+- AI-based URL analysis.
+- Data anlysis iusing AI.
 
 ---
 
